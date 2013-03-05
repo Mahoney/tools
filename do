@@ -37,7 +37,7 @@ function forAllProjects() {
 
 case $action in
     "build")
-      forAllProjects inDirectory 'Building' 'mvn clean install'
+      forAllProjects inDirectory 'Building' 'mvn -q clean install'
     ;;
     "update")
       forAllProjects inDirectory 'Updating' 'git pull'
