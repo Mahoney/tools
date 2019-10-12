@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n'
+
+main() {
+
+    git fetch --prune
+    git pull --rebase origin master
+    git branch --merged | { egrep -v "(^\*|master|dev)" || true; } | xargs git branch -d
+}
+
+main
+
