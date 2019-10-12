@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+strict_bash() {
+  set -euo pipefail
+  IFS=$'\n'
+}
+
+buildUrlWithDefaults() {
+  strict_bash
+  local input=$1
+
+  local default_host=${GIT_CLONE_DEFAULT_HOST:-github.com}
+  local default_project=${GIT_CLONE_DEFAULT_PROJECT:-$USER}
+  local default_protocol=${GIT_CLONE_DEFAULT_PROTOCOL:-ssh}
+  local default_user
+  default_user=$(buildDefaultUser "$default_protocol" "${GIT_CLONE_DEFAULT_USER:-}")
+
+  buildUrl "$input" "$default_host" "$default_project" "$default_protocol" "$default_user"
+}
+
+buildDefaultUser() {
+  strict_bash
+  local default_protocol=$1
+  local maybe_user=$2
+
+  if [ -n "$maybe_user" ]; then
+    echo "$maybe_user"
+  elif [ "$default_protocol" == ssh ]; then
+    echo git
+  else
+    echo
+  fi
+}
+
+buildUrl() {
+  strict_bash
+  local input=$1
+  local default_host=$2
+  local default_project=$3
+  local default_protocol=$4
+  local default_user=$5
+
+  if [[ "$input" == *":"* ]]; then
+    echo "$input"
+  else
+    local protocolAndUser
+    protocolAndUser=$(createProtocolAndUser "$default_protocol" "$default_user")
+    local rest
+    rest=$(createRest "$default_host" "$default_project" "$input")
+    echo "$protocolAndUser$rest"
+  fi
+}
+
+createProtocolAndUser() {
+  strict_bash
+  local protocol=$1
+  local user=$2
+
+  if [ -n "$1" ]; then
+    echo "$protocol://$user@"
+  else
+    echo "$protocol://"
+  fi
+}
+
+createRest() {
+  strict_bash
+  local default_host=$1
+  local default_project=$2
+  local input=$3
+
+  local number_of_slashes
+  number_of_slashes=$(echo "$input" | tr -d -c '/' | wc -m)
+
+  if [ "$number_of_slashes" -gt 1 ]; then
+    echo "$input.git"
+  elif [ "$number_of_slashes" -eq 1 ]; then
+    echo "$default_host/$input.git"
+  else
+    echo "$default_host/$default_project/$input.git"
+  fi
+}
+
+clone() {
+  strict_bash
+  local url=$1
+
+  git clone "$url"
+  cd "$(parseRepo "$url")"
+  nohup idea . &>/dev/null &
+}
+
+parseRepo() {
+  strict_bash
+  local url=$1
+
+  local project_name='[^/\.]+'
+  local extension='\.[a-z]+$'
+  [[ $url =~ .*/($project_name)$extension ]]; echo "${BASH_REMATCH[1]}"
+}
+
+main() {
+  strict_bash
+
+  if [ -e ~/.gitcloneenv ]; then
+    # shellcheck source=/dev/null
+    source ~/.gitcloneenv
+  fi
+
+  local url
+  url="$(buildUrlWithDefaults "$1")"
+
+  echo "Cloning $url"
+  clone "$(buildUrlWithDefaults "$1")"
+}
+
+if [ "${RUN_MAIN:-true}" == true ]; then
+  main "$@"
+fi
