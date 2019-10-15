@@ -56,7 +56,7 @@ createProtocolAndUser() {
   local protocol=$1
   local user=$2
 
-  if [ -n "$1" ]; then
+  if [ -n "$user" ]; then
     echo "$protocol://$user@"
   else
     echo "$protocol://"

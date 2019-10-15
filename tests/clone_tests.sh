@@ -30,4 +30,9 @@ testBuildUrl() {
   doTestBuildUrl foo                                  ssh://git@github.com/Default/foo.git
 }
 
+testBuildUrlWithDefaults() {
+  assertEquals "https://me@github.com/Another/foo.git" "$(export GIT_CLONE_DEFAULT_USER=me; export GIT_CLONE_DEFAULT_PROTOCOL=https; buildUrlWithDefaults Another/foo)"
+  assertEquals "https://github.com/Another/foo.git" "$(export GIT_CLONE_DEFAULT_PROTOCOL=https; buildUrlWithDefaults Another/foo)"
+}
+
 . ../shunit2/shunit2
